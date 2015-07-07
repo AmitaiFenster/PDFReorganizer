@@ -1,5 +1,8 @@
 package pdf_reorganizer;
 
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
@@ -23,16 +26,22 @@ import org.eclipse.swt.layout.GridData;
  */
 public class Main {
 
+	public static final short COMBINE = 1;
+	public static final short REORGANIZE = 2;
+
 	protected Shell shell;
 	private Text TextfirstFileSource;
 	private Text textSecondFileSource;
 	private Text deletePagesText;
-	Button reorganizeButton;
+	private Button reorganizeButton;
+	private Button combineButton;
 	FileChooser fc;
 	String firstFileSource, secondFileSource, fileDestination;
 
 	int pgAmount;
 	int[] erasePages;
+
+	private Action pdfAction;
 
 	/**
 	 * Launch the application.
@@ -56,21 +65,37 @@ public class Main {
 		createContents();
 		shell.open();
 		shell.layout();
+		try {
+			UIManager
+					.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+		} catch (ClassNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (InstantiationException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (IllegalAccessException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (UnsupportedLookAndFeelException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		fc = new FileChooser(null);
 
-		KeyListener listener = new KeyListener() {
-			public void keyReleased(KeyEvent e) {
-				if (e.character == 13)
-					reorganizePage();
-			}
-
-			public void keyPressed(KeyEvent e) {
-
-			}
-		};
-		TextfirstFileSource.addKeyListener(listener);
-		textSecondFileSource.addKeyListener(listener);
-		deletePagesText.addKeyListener(listener);
+		// KeyListener listener = new KeyListener() {
+		// public void keyReleased(KeyEvent e) {
+		// if (e.character == 13)
+		// reorganizePage();
+		// }
+		//
+		// public void keyPressed(KeyEvent e) {
+		//
+		// }
+		// };
+		// TextfirstFileSource.addKeyListener(listener);
+		// textSecondFileSource.addKeyListener(listener);
+		// deletePagesText.addKeyListener(listener);
 
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch()) {
@@ -86,10 +111,10 @@ public class Main {
 		shell = new Shell();
 		shell.setImage(SWTResourceManager.getImage(Main.class,
 				"/pdf_reorganizer/pdf-512.ico"));
-		shell.setSize(1110, 567);
+		shell.setSize(1110, 683);
 		// TODO Main PDF fix minimum size, fix size to be good for all screen
 		// resolutions.
-		shell.setMinimumSize(926, 567);
+		shell.setMinimumSize(1110, 659);
 		shell.setText("PDF Reorganizer");
 		shell.setLayout(new GridLayout(5, false));
 
@@ -168,23 +193,47 @@ public class Main {
 		new Label(shell, SWT.NONE);
 		new Label(shell, SWT.NONE);
 		new Label(shell, SWT.NONE);
-
-		Button reorganizeButton = new Button(shell, SWT.NONE);
-		reorganizeButton.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER,
-				false, false, 1, 1));
-		reorganizeButton.setFont(SWTResourceManager.getFont("Segoe UI", 12,
-				SWT.BOLD));
-		reorganizeButton.addSelectionListener(new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent e) {
-				reorganizePage();
-			}
-		});
-		reorganizeButton.setBounds(361, 441, 361, 65);
-		reorganizeButton.setText("Reorganize Document");
+				
+						reorganizeButton = new Button(shell, SWT.NONE);
+						reorganizeButton.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER,
+								false, false, 1, 1));
+						reorganizeButton.setFont(SWTResourceManager.getFont("Segoe UI", 12,
+								SWT.BOLD));
+						reorganizeButton.addSelectionListener(new SelectionAdapter() {
+							public void widgetSelected(SelectionEvent e) {
+								execute(REORGANIZE);
+							}
+						});
+						reorganizeButton.setBounds(361, 441, 361, 65);
+						reorganizeButton.setText("Reorganize");
+		new Label(shell, SWT.NONE);
+		new Label(shell, SWT.NONE);
+		new Label(shell, SWT.NONE);
+		new Label(shell, SWT.NONE);
+		new Label(shell, SWT.NONE);
+		new Label(shell, SWT.NONE);
+		new Label(shell, SWT.NONE);
+		new Label(shell, SWT.NONE);
+		new Label(shell, SWT.NONE);
+		
+				combineButton = new Button(shell, SWT.NONE);
+				combineButton.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, false,
+						false, 1, 1));
+				combineButton.addSelectionListener(new SelectionAdapter() {
+					@Override
+					public void widgetSelected(SelectionEvent e) {
+						execute(COMBINE);
+					}
+				});
+				combineButton.setText("Combine");
+				combineButton.setFont(SWTResourceManager.getFont("Segoe UI", 12,
+						SWT.BOLD));
 		new Label(shell, SWT.NONE);
 		new Label(shell, SWT.NONE);
 
 	}
+
+	// execute
 
 	/**
 	 * reorganizing the two PDF documents that were inserted in firstFileSource
@@ -192,14 +241,19 @@ public class Main {
 	 * fileDestination. Opens MessageDialog with an error message if the
 	 * information that was entered is not valid.
 	 */
-	public void reorganizePage() {
+	public void execute(final short action) {
 		fileDestination = fc.fileChooseSave();
 		if (fileDestination.equals("cancelled"))
 			return;
 		String deletePagesString = deletePagesText.getText();
-		PDF pdf = new PDF(firstFileSource, secondFileSource, fileDestination);
 		try {
-			pdf.reorganize(deletePagesString);
+			if (action == REORGANIZE)
+				pdfAction = new Reorganize(firstFileSource, secondFileSource,
+						fileDestination);
+			else if (action == COMBINE)
+				pdfAction = new Combine(firstFileSource, secondFileSource,
+						fileDestination);
+			pdfAction.execute(deletePagesString);
 		} catch (Exception ex) {
 			MessageDialog.openError(shell, "Error",
 					"Please enter valid information!\n" + ex);

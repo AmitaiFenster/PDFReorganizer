@@ -1,6 +1,7 @@
 package pdf_reorganizer;
 
 import java.awt.Component;
+
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
