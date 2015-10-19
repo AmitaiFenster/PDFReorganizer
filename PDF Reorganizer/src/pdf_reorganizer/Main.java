@@ -1,15 +1,19 @@
 package pdf_reorganizer;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.KeyEvent;
-import org.eclipse.swt.events.KeyListener;
+import org.eclipse.swt.dnd.*;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.widgets.Label;
@@ -17,6 +21,8 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.wb.swt.SWTResourceManager;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.Composite;
 
 /**
  * Main class for the user interface.
@@ -30,11 +36,16 @@ public class Main {
 	public static final short REORGANIZE = 2;
 
 	protected Shell shell;
-	private Text TextfirstFileSource;
-	private Text textSecondFileSource;
-	private Text deletePagesText;
+	private Text textfirstFileSource, textSecondFileSource, deletePagesText;
+
+	// Action buttons
 	private Button reorganizeButton;
 	private Button combineButton;
+
+	// File choosing buttons
+	private Button btnChoose1;
+	private Button btnChoose2;
+
 	FileChooser fc;
 	String firstFileSource, secondFileSource, fileDestination;
 
@@ -42,6 +53,15 @@ public class Main {
 	int[] erasePages;
 
 	private Action pdfAction;
+
+	// Menu bar
+	Menu menuBar, fileMenu, helpMenu;
+	MenuItem fileMenuHeader, helpMenuHeader;
+	MenuItem fileExitItem, fileCombineItem, helpAboutItem, fileReorganizeItem;
+
+	SelectionAdapter combineSelectionAdapter, reorganizeSelectionAdapter;
+	private Composite composite;
+	private Label lblNewLabel_1;
 
 	/**
 	 * Launch the application.
@@ -63,22 +83,20 @@ public class Main {
 	public void open() {
 		Display display = Display.getDefault();
 		createContents();
+		shell.setMenuBar(menuBar);
+		new Label(shell, SWT.NONE);
 		shell.open();
 		shell.layout();
 		try {
 			UIManager
 					.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
 		} catch (ClassNotFoundException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		} catch (InstantiationException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		} catch (IllegalAccessException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		} catch (UnsupportedLookAndFeelException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		fc = new FileChooser(null);
@@ -93,7 +111,7 @@ public class Main {
 		//
 		// }
 		// };
-		// TextfirstFileSource.addKeyListener(listener);
+		// textfirstFileSource.addKeyListener(listener);
 		// textSecondFileSource.addKeyListener(listener);
 		// deletePagesText.addKeyListener(listener);
 
@@ -111,27 +129,41 @@ public class Main {
 		shell = new Shell();
 		shell.setImage(SWTResourceManager.getImage(Main.class,
 				"/pdf_reorganizer/pdf-512.ico"));
-		shell.setSize(1110, 683);
+		shell.setSize(1110, 590);
 		// TODO Main PDF fix minimum size, fix size to be good for all screen
 		// resolutions.
 		shell.setMinimumSize(1110, 659);
 		shell.setText("PDF Reorganizer");
 		shell.setLayout(new GridLayout(5, false));
 
+		combineSelectionAdapter = new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				execute(COMBINE);
+			}
+		};
+
+		reorganizeSelectionAdapter = new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				execute(REORGANIZE);
+			}
+		};
+
 		Label lblfirstFileSource = new Label(shell, SWT.NONE);
 		lblfirstFileSource.setText("First file source");
 		new Label(shell, SWT.NONE);
 
-		TextfirstFileSource = new Text(shell, SWT.BORDER);
-		TextfirstFileSource.setLayoutData(new GridData(SWT.FILL, SWT.CENTER,
+		textfirstFileSource = new Text(shell, SWT.BORDER);
+		textfirstFileSource.setLayoutData(new GridData(SWT.FILL, SWT.CENTER,
 				true, false, 1, 1));
 
-		Button btnChoose1 = new Button(shell, SWT.NONE);
+		btnChoose1 = new Button(shell, SWT.NONE);
 		btnChoose1.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				firstFileSource = fc.fileChooseOpen();
-				TextfirstFileSource.setText(firstFileSource);
+				textfirstFileSource.setText(firstFileSource);
 			}
 		});
 		btnChoose1.setText("choose...");
@@ -145,7 +177,7 @@ public class Main {
 		textSecondFileSource.setLayoutData(new GridData(SWT.FILL, SWT.CENTER,
 				true, false, 1, 1));
 
-		Button btnChoose2 = new Button(shell, SWT.NONE);
+		btnChoose2 = new Button(shell, SWT.NONE);
 		btnChoose2.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -174,66 +206,124 @@ public class Main {
 
 		Label label_4 = new Label(shell, SWT.NONE);
 		label_4.setText("     ");
-		new Label(shell, SWT.NONE);
+
+		Label deleteExample = new Label(shell, SWT.NONE);
+		deleteExample.setText("Pages Example: 1,3,5\nleave blank if necessary");
 		new Label(shell, SWT.NONE);
 
 		Label lblNewLabel = new Label(shell, SWT.NONE);
 		lblNewLabel.setText("   ");
 		new Label(shell, SWT.NONE);
 		new Label(shell, SWT.NONE);
+		new Label(shell, SWT.NONE);
+		new Label(shell, SWT.NONE);
+		new Label(shell, SWT.NONE);
+		new Label(shell, SWT.NONE);
+		new Label(shell, SWT.NONE);
 
-		Label deleteExample = new Label(shell, SWT.NONE);
-		deleteExample.setText("Pages Example: 1,3,5\nleave blank if necessary");
+		composite = new Composite(shell, SWT.NONE);
+		GridLayout gl_composite = new GridLayout(3, false);
+		composite.setLayout(gl_composite);
+		composite.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true,
+				false, 1, 1));
+
+		reorganizeButton = new Button(composite, SWT.NONE);
+		reorganizeButton.setFont(SWTResourceManager.getFont("Segoe UI", 12,
+				SWT.BOLD));
+		reorganizeButton.addSelectionListener(reorganizeSelectionAdapter);
+		reorganizeButton.setBounds(361, 441, 222, 64);
+		reorganizeButton.setText("Reorganize");
+
+		new Label(composite, SWT.NONE).setText("\t");
+
+		combineButton = new Button(composite, SWT.NONE);
+		combineButton.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false,
+				true, 1, 1));
+		combineButton.setSize(180, 64);
+		combineButton.addSelectionListener(combineSelectionAdapter);
+		combineButton.setText("Combine");
+		combineButton.setFont(SWTResourceManager.getFont("Segoe UI", 12,
+				SWT.BOLD));
 		new Label(shell, SWT.NONE);
 		new Label(shell, SWT.NONE);
 		new Label(shell, SWT.NONE);
 		new Label(shell, SWT.NONE);
 		new Label(shell, SWT.NONE);
 		new Label(shell, SWT.NONE);
-		new Label(shell, SWT.NONE);
-		new Label(shell, SWT.NONE);
-		new Label(shell, SWT.NONE);
-				
-						reorganizeButton = new Button(shell, SWT.NONE);
-						reorganizeButton.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER,
-								false, false, 1, 1));
-						reorganizeButton.setFont(SWTResourceManager.getFont("Segoe UI", 12,
-								SWT.BOLD));
-						reorganizeButton.addSelectionListener(new SelectionAdapter() {
-							public void widgetSelected(SelectionEvent e) {
-								execute(REORGANIZE);
-							}
-						});
-						reorganizeButton.setBounds(361, 441, 361, 65);
-						reorganizeButton.setText("Reorganize");
-		new Label(shell, SWT.NONE);
-		new Label(shell, SWT.NONE);
-		new Label(shell, SWT.NONE);
-		new Label(shell, SWT.NONE);
-		new Label(shell, SWT.NONE);
-		new Label(shell, SWT.NONE);
-		new Label(shell, SWT.NONE);
-		new Label(shell, SWT.NONE);
-		new Label(shell, SWT.NONE);
-		
-				combineButton = new Button(shell, SWT.NONE);
-				combineButton.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, false,
-						false, 1, 1));
-				combineButton.addSelectionListener(new SelectionAdapter() {
-					@Override
-					public void widgetSelected(SelectionEvent e) {
-						execute(COMBINE);
-					}
-				});
-				combineButton.setText("Combine");
-				combineButton.setFont(SWTResourceManager.getFont("Segoe UI", 12,
-						SWT.BOLD));
-		new Label(shell, SWT.NONE);
-		new Label(shell, SWT.NONE);
+
+		setMenuBar();
+
+		setDropTargets();
+	}
+
+	private void setMenuBar() {
+		this.menuBar = new Menu(shell, SWT.BAR);
+
+		this.fileMenuHeader = new MenuItem(this.menuBar, SWT.CASCADE);
+		this.fileMenuHeader.setText("&File");
+		this.fileMenu = new Menu(shell, SWT.DROP_DOWN);
+		this.fileMenuHeader.setMenu(this.fileMenu);
+
+		this.fileCombineItem = new MenuItem(this.fileMenu, SWT.PUSH);
+		this.fileCombineItem.setText("&Combine");
+
+		this.fileReorganizeItem = new MenuItem(this.fileMenu, SWT.PUSH);
+		this.fileReorganizeItem.setText("&Reorganize");
+
+		this.fileExitItem = new MenuItem(this.fileMenu, SWT.PUSH);
+		this.fileExitItem.setText("E&xit");
+
+		this.helpMenuHeader = new MenuItem(this.menuBar, SWT.CASCADE);
+		this.helpMenuHeader.setText("&Help");
+		this.helpMenu = new Menu(shell, SWT.DROP_DOWN);
+		this.helpMenuHeader.setMenu(this.helpMenu);
+
+		this.helpAboutItem = new MenuItem(this.helpMenu, SWT.PUSH);
+		this.helpAboutItem.setText("&About PDF Reorganizer");
+
+		this.fileExitItem.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				shell.close();
+			}
+		});
+		this.fileReorganizeItem
+				.addSelectionListener(this.reorganizeSelectionAdapter);
+		this.fileCombineItem.addSelectionListener(this.combineSelectionAdapter);
+		this.helpAboutItem.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				try {
+					aboutPopup();
+				} catch (FileNotFoundException e1) {
+					MessageDialog.openError(shell, "Error",
+							"Cannot open 'About PDF Reorganizer' window");
+					e1.printStackTrace();
+				}
+			}
+		});
 
 	}
 
-	// execute
+	private void setDropTargets() {
+		// Allow data to be copied or moved to the drop target
+		int operations = DND.DROP_LINK | DND.DROP_MOVE | DND.DROP_COPY
+				| DND.DROP_DEFAULT;
+		DropTarget target1 = new DropTarget(this.textfirstFileSource,
+				operations);
+		DropTarget target2 = new DropTarget(this.textSecondFileSource,
+				operations);
+
+		// Receive data in Text or File format
+		final FileTransfer fileTransfer = FileTransfer.getInstance();
+		Transfer[] types = new Transfer[] { fileTransfer };
+		target1.setTransfer(types);
+		target1.addDropListener(new DropListener(fileTransfer,
+				this.textfirstFileSource));
+		target2.setTransfer(types);
+		target2.addDropListener(new DropListener(fileTransfer,
+				this.textSecondFileSource));
+	}
 
 	/**
 	 * reorganizing the two PDF documents that were inserted in firstFileSource
@@ -241,7 +331,9 @@ public class Main {
 	 * fileDestination. Opens MessageDialog with an error message if the
 	 * information that was entered is not valid.
 	 */
-	public void execute(final short action) {
+	private void execute(final short action) {
+		firstFileSource = this.textfirstFileSource.getText();
+		secondFileSource = this.textSecondFileSource.getText();
 		fileDestination = fc.fileChooseSave();
 		if (fileDestination.equals("cancelled"))
 			return;
@@ -254,10 +346,32 @@ public class Main {
 				pdfAction = new Combine(firstFileSource, secondFileSource,
 						fileDestination);
 			pdfAction.execute(deletePagesString);
+			MessageDialog.openInformation(null, "PDF File Created",
+					"PDF file created at " + fileDestination);
 		} catch (Exception ex) {
+			// Delete temporary file:
+			new File(System.getProperty("user.home") + "\\" + "Desktop" + "\\"
+					+ "combinedTemp.pdf").delete();
+			String sMessage = ex.getMessage(), sCause = ex.getCause()
+					.getMessage();
 			MessageDialog.openError(shell, "Error",
-					"Please enter valid information!\n" + ex);
+					"Please enter valid information!\n\nError " + sMessage
+							+ sCause);
 			ex.printStackTrace();
 		}
+	}
+
+	/**
+	 * Opens a popup with information about the application PDFReorganizer. The
+	 * text with the information is taken from 'About.txt' which is found in the
+	 * project folder.
+	 * 
+	 * @throws FileNotFoundException
+	 *             Exception number: 005. If the text file 'About.txt' wasn't
+	 *             found in the project directory.
+	 */
+	private void aboutPopup() throws FileNotFoundException {
+		MessageDialog.openInformation(shell, "About PDF Reorganizer",
+				new Scanner(new File("About.txt")).useDelimiter("\\Z").next());
 	}
 }

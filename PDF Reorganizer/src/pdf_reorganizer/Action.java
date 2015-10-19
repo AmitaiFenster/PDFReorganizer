@@ -5,8 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import org.eclipse.jface.dialogs.MessageDialog;
-
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.pdf.PdfConcatenate;
 import com.itextpdf.text.pdf.PdfReader;
@@ -19,6 +17,7 @@ import com.itextpdf.text.pdf.PdfReader;
 public abstract class Action {
 
 	protected String firstFileSource, secondFileSource, fileDestination;
+	private PdfConcatenate d;
 
 	/**
 	 * 
@@ -94,7 +93,7 @@ public abstract class Action {
 	 *            String with the pages to delete
 	 */
 	public abstract void execute(String deletePages) throws Exception;
-	
+
 	/**
 	 * ordering in a String the order of the pages with pages to delete.
 	 * 
@@ -104,36 +103,64 @@ public abstract class Action {
 	 *            String with the pages to delete
 	 * @return pgOrder: String with the order of the page. for example: "1,2,3"
 	 * @throws Exception
-	 *             if the String of delete pages (deletePages) includes a
-	 *             character that is not a number or space or comma (",").
+	 *             Exception number: 004. if the String of delete pages (deletePages)
+	 *             includes a character that is not a number or space or comma
+	 *             (",").
 	 */
-	public abstract String orderString(int pgAmount, String deletePages) throws Exception;
+	public abstract String orderString(int pgAmount, String deletePages)
+			throws Exception;
 
 	/**
 	 * combines two PDF files into one file
 	 * 
 	 * @param destination
 	 *            String with the destination to save the final combined file.
+	 * @throws Exception
+	 *             Exception number: 001, 002, 003.
 	 */
-	public void combine(String destination) {
+	public void combine(String destination) throws Exception {
 		try {
-			new File(destination).createNewFile();
-			PdfConcatenate d = new PdfConcatenate(new FileOutputStream(
-					destination));
 			String[] files = { this.firstFileSource, this.secondFileSource };
+
+			doFilesExist(files);
+
+			new File(destination).createNewFile();
+			this.d = new PdfConcatenate(new FileOutputStream(destination));
 			for (int i = 0; i < files.length; i++)
-				d.addPages(new PdfReader(files[i]));
-			d.close();
+				this.d.addPages(new PdfReader(files[i]));
+			this.d.close();
 		} catch (FileNotFoundException e) {
-			MessageDialog.openError(null, "Error", "201\n" + e);
+			if (this.d != null)
+				this.d.close();
 			e.printStackTrace();
+			throw new Exception("001:\n", e);
 		} catch (DocumentException e) {
-			MessageDialog.openError(null, "Error", "202\n" + e);
+			if (this.d != null)
+				this.d.close();
 			e.printStackTrace();
+			throw new Exception("002:\n", e);
 		} catch (IOException e) {
-			MessageDialog.openError(null, "Error", "203\n" + e);
+			if (this.d != null)
+				this.d.close();
 			e.printStackTrace();
+			throw new Exception("003:\n", e);
 		}
+	}
+
+	/**
+	 * If a file from the array of files paths (files) does not exist, a
+	 * IOException will be thrown.
+	 * 
+	 * @param files
+	 *            array of file paths.
+	 * @throws IOException
+	 *             java.io.IOException: \file\ not found as file or resource.
+	 */
+	private void doFilesExist(String[] files) throws IOException {
+		for (int i = 0; i < files.length; i++)
+			if (!new File(files[i]).exists())
+				throw new IOException("java.io.IOException: " + files[i]
+						+ " not found as file or resource.");
 	}
 
 	/**
@@ -144,23 +171,33 @@ public abstract class Action {
 	 * @return pgOrder: Integer array with the order of the page not including
 	 *         the pages that were deleted.
 	 * @throws Exception
-	 *             if the String of delete pages (deletePages) includes a
-	 *             character that is not a number or space or comma (",").
+	 *             Exception number: 004. if the String of delete pages (deletePages)
+	 *             includes a character that is not a number or space or comma
+	 *             (",").
 	 */
 	public int[] deletePages(String deletePages, int[] pgOrder)
 			throws Exception {
-		int[] pages = duplicateIntArray(pgOrder);
-		int[] deletePagesArr = pagesToInt(deletePages);
-		for (int i = 0; i < deletePagesArr.length; i++)
-			pages[deletePagesArr[i] - 1] = 0;
-		int[] finalPgOrder = new int[pages.length - deletePagesArr.length];
-		int j = 0;
-		for (int i = 0; i < pages.length; i++)
-			if (pages[i] != 0) {
-				finalPgOrder[j] = pages[i];
-				j++;
-			}
-		return finalPgOrder;
+		try {
+			int[] pages = duplicateIntArray(pgOrder);
+			int[] deletePagesArr;
+			deletePagesArr = pagesToInt(deletePages);
+			for (int i = 0; i < deletePagesArr.length; i++)
+				pages[deletePagesArr[i] - 1] = 0;
+			int[] finalPgOrder = new int[pages.length - deletePagesArr.length];
+			int j = 0;
+			for (int i = 0; i < pages.length; i++)
+				if (pages[i] != 0) {
+					finalPgOrder[j] = pages[i];
+					j++;
+				}
+			return finalPgOrder;
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new Exception(
+					"004:\ndelete pages includes invalid characters\n", e);
+
+		}
+
 	}
 
 	/**

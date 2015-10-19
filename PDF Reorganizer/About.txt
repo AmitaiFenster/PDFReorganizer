@@ -1,0 +1,5 @@
+PDFReorganizer Version 1.2
+
+Copyright (C) 2015 Amitai Fensterheim
+
+PDFReorganizer comes with ABSOLUTELY NO WARRANTY.

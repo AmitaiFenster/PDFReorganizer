@@ -2,14 +2,14 @@ package pdf_reorganizer;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
-
-import org.eclipse.jface.dialogs.MessageDialog;
 
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.PdfStamper;
 
 public class Reorganize extends Action {
+
+	PdfReader reader;
+	PdfStamper stamper;
 
 	public Reorganize(String firstFileSource, String secondFileSource,
 			String fileDestination) {
@@ -59,26 +59,32 @@ public class Reorganize extends Action {
 	 *            String of pages to delete (example: "1, 2, 3"). leave blank if
 	 *            there are no pages to delete.
 	 * @throws Exception
-	 *             if the String of delete pages (deletePages) includes a
-	 *             character that is not a number or space or comma (",").
+	 *             Exception number: 001, 002, 003, 004
 	 */
 	public void reorganize(String deletePages) throws Exception {
-		combine(System.getProperty("user.home") + "\\" + "Desktop" + "\\"
-				+ "combinedTemp.pdf");
-		PdfReader reader = new PdfReader(System.getProperty("user.home") + "\\"
-				+ "Desktop" + "\\" + "combinedTemp.pdf");
 		try {
-			reader.selectPages(orderString(reader.getNumberOfPages(),
+			// Combining the two PDF files into one temporary file.
+			combine(System.getProperty("user.home") + "\\" + "Desktop" + "\\"
+					+ "combinedTemp.pdf");
+			this.reader = new PdfReader(System.getProperty("user.home") + "\\"
+					+ "Desktop" + "\\" + "combinedTemp.pdf");
+			this.reader.selectPages(orderString(this.reader.getNumberOfPages(),
 					deletePages));
-			PdfStamper stamper = new PdfStamper(reader, new FileOutputStream(
+			this.stamper = new PdfStamper(this.reader, new FileOutputStream(
 					this.fileDestination));
-			stamper.close();
-		} catch (Exception ex) {
-			MessageDialog.openError(null, "Error", "101\n" + ex);
+			this.stamper.close();
+			this.reader.close();
+			new File(System.getProperty("user.home") + "\\" + "Desktop" + "\\"
+					+ "combinedTemp.pdf").delete();
+		} catch (Exception e) {
+			e.printStackTrace();
+			if (this.stamper != null)
+				this.stamper.close();
+			if (this.reader != null)
+				this.reader.close();
+			throw e;
 		}
-		reader.close();
-		new File(System.getProperty("user.home") + "\\" + "Desktop" + "\\"
-				+ "combinedTemp.pdf").delete();
+
 	}
 
 }
