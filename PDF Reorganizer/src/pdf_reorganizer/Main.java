@@ -13,7 +13,6 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.dnd.*;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.widgets.Label;
@@ -23,6 +22,8 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Composite;
+
+import com.itextpdf.awt.geom.Dimension;
 
 /**
  * Main class for the user interface.
@@ -61,7 +62,6 @@ public class Main {
 
 	SelectionAdapter combineSelectionAdapter, reorganizeSelectionAdapter;
 	private Composite composite;
-	private Label lblNewLabel_1;
 
 	/**
 	 * Launch the application.
@@ -126,13 +126,16 @@ public class Main {
 	 * Create contents of the window.
 	 */
 	protected void createContents() {
-		shell = new Shell();
+		shell = new Shell(SWT.MAX | SWT.MIN);
 		shell.setImage(SWTResourceManager.getImage(Main.class,
 				"/pdf_reorganizer/pdf-512.ico"));
-		shell.setSize(1110, 590);
+		shell.setSize(FormSetup.getWidth(1200.0 / 3200.0),
+				FormSetup.getHeight(584.0 / 1800.0));
+
 		// TODO Main PDF fix minimum size, fix size to be good for all screen
 		// resolutions.
-		shell.setMinimumSize(1110, 659);
+
+		// shell.setMinimumSize(1110, 584);
 		shell.setText("PDF Reorganizer");
 		shell.setLayout(new GridLayout(5, false));
 
@@ -253,7 +256,8 @@ public class Main {
 
 		setMenuBar();
 
-		setDropTargets();
+		FormSetup.setDropTargets(this.textfirstFileSource,
+				this.textSecondFileSource);
 	}
 
 	private void setMenuBar() {
@@ -303,26 +307,6 @@ public class Main {
 			}
 		});
 
-	}
-
-	private void setDropTargets() {
-		// Allow data to be copied or moved to the drop target
-		int operations = DND.DROP_LINK | DND.DROP_MOVE | DND.DROP_COPY
-				| DND.DROP_DEFAULT;
-		DropTarget target1 = new DropTarget(this.textfirstFileSource,
-				operations);
-		DropTarget target2 = new DropTarget(this.textSecondFileSource,
-				operations);
-
-		// Receive data in Text or File format
-		final FileTransfer fileTransfer = FileTransfer.getInstance();
-		Transfer[] types = new Transfer[] { fileTransfer };
-		target1.setTransfer(types);
-		target1.addDropListener(new DropListener(fileTransfer,
-				this.textfirstFileSource));
-		target2.setTransfer(types);
-		target2.addDropListener(new DropListener(fileTransfer,
-				this.textSecondFileSource));
 	}
 
 	/**
