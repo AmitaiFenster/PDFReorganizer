@@ -23,10 +23,9 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Composite;
 
-import com.itextpdf.awt.geom.Dimension;
-
 /**
- * Main class for the user interface.
+ * Main class for the UI. This form is for the combine and the reorganize
+ * actions.
  * 
  * @author Amitai Fensterheim TOAO
  *
@@ -37,7 +36,8 @@ public class Main {
 	public static final short REORGANIZE = 2;
 
 	protected Shell shell;
-	private Text textfirstFileSource, textSecondFileSource, deletePagesText;
+	private Text textfirstFileLocation, textSecondFileLocation,
+			deletePagesText;
 
 	// Action buttons
 	private Button reorganizeButton;
@@ -47,13 +47,10 @@ public class Main {
 	private Button btnChoose1;
 	private Button btnChoose2;
 
-	FileChooser fc;
-	String firstFileSource, secondFileSource, fileDestination;
+	private FileChooser fc;
+	private String firstFileLocation, secondFileLocation, fileDestination;
 
-	int pgAmount;
-	int[] erasePages;
-
-	private Action pdfAction;
+	private PDFAction pdfAction;
 
 	// Menu bar
 	Menu menuBar, fileMenu, helpMenu;
@@ -101,20 +98,6 @@ public class Main {
 		}
 		fc = new FileChooser(null);
 
-		// KeyListener listener = new KeyListener() {
-		// public void keyReleased(KeyEvent e) {
-		// if (e.character == 13)
-		// reorganizePage();
-		// }
-		//
-		// public void keyPressed(KeyEvent e) {
-		//
-		// }
-		// };
-		// textfirstFileSource.addKeyListener(listener);
-		// textSecondFileSource.addKeyListener(listener);
-		// deletePagesText.addKeyListener(listener);
-
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch()) {
 				display.sleep();
@@ -132,10 +115,6 @@ public class Main {
 		shell.setSize(FormSetup.getWidth(1200.0 / 3200.0),
 				FormSetup.getHeight(584.0 / 1800.0));
 
-		// TODO Main PDF fix minimum size, fix size to be good for all screen
-		// resolutions.
-
-		// shell.setMinimumSize(1110, 584);
 		shell.setText("PDF Reorganizer");
 		shell.setLayout(new GridLayout(5, false));
 
@@ -153,39 +132,39 @@ public class Main {
 			}
 		};
 
-		Label lblfirstFileSource = new Label(shell, SWT.NONE);
-		lblfirstFileSource.setText("First file source");
+		Label lblfirstFileLocation = new Label(shell, SWT.NONE);
+		lblfirstFileLocation.setText("First file location");
 		new Label(shell, SWT.NONE);
 
-		textfirstFileSource = new Text(shell, SWT.BORDER);
-		textfirstFileSource.setLayoutData(new GridData(SWT.FILL, SWT.CENTER,
+		textfirstFileLocation = new Text(shell, SWT.BORDER);
+		textfirstFileLocation.setLayoutData(new GridData(SWT.FILL, SWT.CENTER,
 				true, false, 1, 1));
 
 		btnChoose1 = new Button(shell, SWT.NONE);
 		btnChoose1.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				firstFileSource = fc.fileChooseOpen();
-				textfirstFileSource.setText(firstFileSource);
+				firstFileLocation = fc.fileChooseOpen();
+				textfirstFileLocation.setText(firstFileLocation);
 			}
 		});
 		btnChoose1.setText("choose...");
 		new Label(shell, SWT.NONE);
 
-		Label lblSecondFileSource = new Label(shell, SWT.NONE);
-		lblSecondFileSource.setText("Second file source");
+		Label lblSecondFileLocation = new Label(shell, SWT.NONE);
+		lblSecondFileLocation.setText("Second file location");
 		new Label(shell, SWT.NONE);
 
-		textSecondFileSource = new Text(shell, SWT.BORDER);
-		textSecondFileSource.setLayoutData(new GridData(SWT.FILL, SWT.CENTER,
+		textSecondFileLocation = new Text(shell, SWT.BORDER);
+		textSecondFileLocation.setLayoutData(new GridData(SWT.FILL, SWT.CENTER,
 				true, false, 1, 1));
 
 		btnChoose2 = new Button(shell, SWT.NONE);
 		btnChoose2.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				secondFileSource = fc.fileChooseOpen();
-				textSecondFileSource.setText(secondFileSource);
+				secondFileLocation = fc.fileChooseOpen();
+				textSecondFileLocation.setText(secondFileLocation);
 			}
 		});
 		btnChoose2.setText("choose...");
@@ -256,8 +235,8 @@ public class Main {
 
 		setMenuBar();
 
-		FormSetup.setDropTargets(this.textfirstFileSource,
-				this.textSecondFileSource);
+		FormSetup.setDropTargets(this.textfirstFileLocation);
+		FormSetup.setDropTargets(this.textSecondFileLocation);
 	}
 
 	private void setMenuBar() {
@@ -310,25 +289,25 @@ public class Main {
 	}
 
 	/**
-	 * reorganizing the two PDF documents that were inserted in firstFileSource
-	 * and secondFileSource, and saves the reorganized document to
-	 * fileDestination. Opens MessageDialog with an error message if the
-	 * information that was entered is not valid.
+	 * reorganizing the two PDF documents that were inserted in
+	 * firstFileLocation and secondFileLocation, and saves the reorganized
+	 * document to fileDestination. Opens MessageDialog with an error message if
+	 * the information that was entered is not valid.
 	 */
 	private void execute(final short action) {
-		firstFileSource = this.textfirstFileSource.getText();
-		secondFileSource = this.textSecondFileSource.getText();
+		firstFileLocation = this.textfirstFileLocation.getText();
+		secondFileLocation = this.textSecondFileLocation.getText();
 		fileDestination = fc.fileChooseSave();
 		if (fileDestination.equals("cancelled"))
 			return;
 		String deletePagesString = deletePagesText.getText();
 		try {
 			if (action == REORGANIZE)
-				pdfAction = new Reorganize(firstFileSource, secondFileSource,
-						fileDestination);
+				pdfAction = new PDFReorganize(firstFileLocation,
+						secondFileLocation, fileDestination);
 			else if (action == COMBINE)
-				pdfAction = new Combine(firstFileSource, secondFileSource,
-						fileDestination);
+				pdfAction = new PDFCombine(firstFileLocation,
+						secondFileLocation, fileDestination);
 			pdfAction.execute(deletePagesString);
 			MessageDialog.openInformation(null, "PDF File Created",
 					"PDF file created at " + fileDestination);
@@ -336,8 +315,11 @@ public class Main {
 			// Delete temporary file:
 			new File(System.getProperty("user.home") + "\\" + "Desktop" + "\\"
 					+ "combinedTemp.pdf").delete();
-			String sMessage = ex.getMessage(), sCause = ex.getCause()
-					.getMessage();
+			String sMessage = ex.getMessage();
+			Throwable TCause = ex.getCause();
+			String sCause = "";
+			if (TCause != null)
+				sCause = TCause.getMessage();
 			MessageDialog.openError(shell, "Error",
 					"Please enter valid information!\n\nError " + sMessage
 							+ sCause);
@@ -354,6 +336,7 @@ public class Main {
 	 *             Exception number: 005. If the text file 'About.txt' wasn't
 	 *             found in the project directory.
 	 */
+	@SuppressWarnings("resource")
 	private void aboutPopup() throws FileNotFoundException {
 		MessageDialog.openInformation(shell, "About PDF Reorganizer",
 				new Scanner(new File("About.txt")).useDelimiter("\\Z").next());

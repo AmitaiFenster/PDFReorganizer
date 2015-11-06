@@ -3,11 +3,25 @@ package pdf_reorganizer;
 import org.eclipse.swt.dnd.*;
 import org.eclipse.swt.widgets.Text;
 
+/**
+ * Setting up a drop listener for the user to drop a file to a text field in
+ * order to determine a file path.
+ * 
+ * @author Amitai Fensterheim TOAO
+ *
+ */
 public class DropListener implements DropTargetListener {
 
 	FileTransfer fileTransfer;
 	Text targetText;
 
+	/**
+	 * Creates a new drop listener instance. this Allows the user to drop a file
+	 * in a text field in order to determine a file path.
+	 * 
+	 * @param fileTransfer
+	 * @param targetText
+	 */
 	public DropListener(FileTransfer fileTransfer, Text targetText) {
 		this.fileTransfer = fileTransfer;
 		this.targetText = targetText;

@@ -10,49 +10,54 @@ import com.itextpdf.text.pdf.PdfConcatenate;
 import com.itextpdf.text.pdf.PdfReader;
 
 /**
+ * super class for actions on the PDF files. examples: PDF combining, PDF
+ * reorganizing.
  * 
- * @author amita_000 super class for actions on the PDF files.
+ * @author Amitai Fensterheim TOAO
  *
  */
-public abstract class Action {
+public abstract class PDFAction {
 
-	protected String firstFileSource, secondFileSource, fileDestination;
-	private PdfConcatenate d;
+	protected String firstFileLocation, secondFileLocation, fileDestination;
 
 	/**
 	 * 
-	 * @param firstFileSource
-	 *            Source file
-	 * @param secondFileSource
-	 *            Source file
+	 * @param firstFileLocation
+	 *            Location file
+	 * @param secondFileLocation
+	 *            Location file
 	 * @param fileDestination
 	 *            Destination to save the new file
+	 * @throws Exception
 	 */
-	public Action(String firstFileSource, String secondFileSource,
-			String fileDestination) {
-		this.firstFileSource = firstFileSource;
-		this.secondFileSource = secondFileSource;
+	public PDFAction(String firstFileLocation, String secondFileLocation,
+			String fileDestination) throws Exception {
+		if (!firstFileLocation.endsWith(".pdf")
+				|| !secondFileLocation.endsWith(".pdf"))
+			throw new Exception("005:\nPlease enter pdf files only!");
+		this.firstFileLocation = firstFileLocation;
+		this.secondFileLocation = secondFileLocation;
 		this.fileDestination = fileDestination;
 	}
 
 	/**
-	 * sets the first file source
+	 * sets the first file location
 	 * 
-	 * @param firstFileSource
-	 *            file source String
+	 * @param firstFileLocation
+	 *            file location String
 	 */
-	public void setFirstFileSource(String firstFileSource) {
-		this.firstFileSource = firstFileSource;
+	public void setFirstFileLocation(String firstFileLocation) {
+		this.firstFileLocation = firstFileLocation;
 	}
 
 	/**
-	 * sets the second file source
+	 * sets the second file location
 	 * 
-	 * @param secondFileSource
-	 *            file source String
+	 * @param secondFileLocation
+	 *            file location String
 	 */
-	public void setSecondFileSource(String secondFileSource) {
-		this.secondFileSource = secondFileSource;
+	public void setSecondFileLocation(String secondFileLocation) {
+		this.secondFileLocation = secondFileLocation;
 	}
 
 	/**
@@ -66,17 +71,17 @@ public abstract class Action {
 	}
 
 	/**
-	 * @return firstFileSource
+	 * @return firstFileLocation
 	 */
-	public String getFirstFileSource() {
-		return firstFileSource;
+	public String getFirstFileLocation() {
+		return firstFileLocation;
 	}
 
 	/**
-	 * @return secondFileSource
+	 * @return secondFileLocation
 	 */
-	public String getSecondFileSource() {
-		return secondFileSource;
+	public String getSecondFileLocation() {
+		return secondFileLocation;
 	}
 
 	/**
@@ -103,9 +108,9 @@ public abstract class Action {
 	 *            String with the pages to delete
 	 * @return pgOrder: String with the order of the page. for example: "1,2,3"
 	 * @throws Exception
-	 *             Exception number: 004. if the String of delete pages (deletePages)
-	 *             includes a character that is not a number or space or comma
-	 *             (",").
+	 *             Exception number: 004. if the String of delete pages
+	 *             (deletePages) includes a character that is not a number or
+	 *             space or comma (",").
 	 */
 	public abstract String orderString(int pgAmount, String deletePages)
 			throws Exception;
@@ -115,48 +120,50 @@ public abstract class Action {
 	 * 
 	 * @param destination
 	 *            String with the destination to save the final combined file.
+	 * @param filesLocations
+	 *            array with the files
 	 * @throws Exception
 	 *             Exception number: 001, 002, 003.
 	 */
-	public void combine(String destination) throws Exception {
+	public static void combine(String destination, String[] filesLocations)
+			throws Exception {
+
+		PdfConcatenate d = new PdfConcatenate(new FileOutputStream(destination));
+
 		try {
-			String[] files = { this.firstFileSource, this.secondFileSource };
-
-			doFilesExist(files);
-
+			doFilesExist(filesLocations);
 			new File(destination).createNewFile();
-			this.d = new PdfConcatenate(new FileOutputStream(destination));
-			for (int i = 0; i < files.length; i++)
-				this.d.addPages(new PdfReader(files[i]));
-			this.d.close();
+			for (int i = 0; i < filesLocations.length; i++)
+				d.addPages(new PdfReader(filesLocations[i]));
+			d.close();
 		} catch (FileNotFoundException e) {
-			if (this.d != null)
-				this.d.close();
+			if (d != null)
+				d.close();
 			e.printStackTrace();
 			throw new Exception("001:\n", e);
 		} catch (DocumentException e) {
-			if (this.d != null)
-				this.d.close();
+			if (d != null)
+				d.close();
 			e.printStackTrace();
 			throw new Exception("002:\n", e);
 		} catch (IOException e) {
-			if (this.d != null)
-				this.d.close();
+			if (d != null)
+				d.close();
 			e.printStackTrace();
 			throw new Exception("003:\n", e);
 		}
 	}
 
 	/**
-	 * If a file from the array of files paths (files) does not exist, a
+	 * If a file from the array of files locations (files) does not exist, a
 	 * IOException will be thrown.
 	 * 
 	 * @param files
-	 *            array of file paths.
+	 *            array of file locations.
 	 * @throws IOException
 	 *             java.io.IOException: \file\ not found as file or resource.
 	 */
-	private void doFilesExist(String[] files) throws IOException {
+	public static void doFilesExist(String[] files) throws IOException {
 		for (int i = 0; i < files.length; i++)
 			if (!new File(files[i]).exists())
 				throw new IOException("java.io.IOException: " + files[i]
@@ -164,18 +171,19 @@ public abstract class Action {
 	}
 
 	/**
-	 * delete the pages that are in the String deletePages.
+	 * removing from the integer array of page order the pages that need to be
+	 * removed according to the String deletePages.
 	 * 
 	 * @param deletePages
 	 *            pages to delete
 	 * @return pgOrder: Integer array with the order of the page not including
 	 *         the pages that were deleted.
 	 * @throws Exception
-	 *             Exception number: 004. if the String of delete pages (deletePages)
-	 *             includes a character that is not a number or space or comma
-	 *             (",").
+	 *             Exception number: 004. if the String of delete pages
+	 *             (deletePages) includes a character that is not a number or
+	 *             space or comma (",").
 	 */
-	public int[] deletePages(String deletePages, int[] pgOrder)
+	public int[] removeDeletePages(String deletePages, int[] pgOrder)
 			throws Exception {
 		try {
 			int[] pages = duplicateIntArray(pgOrder);

@@ -2,27 +2,47 @@ package pdf_reorganizer;
 
 import java.io.File;
 import java.io.FileOutputStream;
+
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.PdfStamper;
 
-public class Combine extends Action {
+/**
+ * combining PDF files to one PDF file.
+ * 
+ * @author Amitai Fensterheim TOAO
+ *
+ */
+public class PDFCombine extends PDFAction {
 
 	PdfReader reader;
 	PdfStamper stamper;
 
-	public Combine(String firstFileSource, String secondFileSource,
-			String fileDestination) {
-		super(firstFileSource, secondFileSource, fileDestination);
+	/**
+	 * Creating a new PDFCombine instance. this is used to combine PDF files to
+	 * one PDF file.
+	 * 
+	 * @param firstFileLocation
+	 * @param secondFileLocation
+	 * @param fileDestination
+	 * @throws Exception
+	 */
+	public PDFCombine(String firstFileLocation, String secondFileLocation,
+			String fileDestination) throws Exception {
+		super(firstFileLocation, secondFileLocation, fileDestination);
 	}
 
 	@Override
 	public void execute(String deletePages) throws Exception {
+
+		String[] filesLocations = new String[] { this.firstFileLocation,
+				this.secondFileLocation };
+
 		try {
 			if (deletePages.equals("")) {
-				combine(fileDestination);
+				combine(fileDestination, filesLocations);
 			} else {
 				combine(System.getProperty("user.home") + "\\" + "Desktop"
-						+ "\\" + "combinedTemp.pdf");
+						+ "\\" + "combinedTemp.pdf", filesLocations);
 
 				this.reader = new PdfReader(System.getProperty("user.home")
 						+ "\\" + "Desktop" + "\\" + "combinedTemp.pdf");
@@ -56,7 +76,7 @@ public class Combine extends Action {
 		}
 
 		if (!deletePages.equals(""))
-			pgOrder = deletePages(deletePages, pgOrder);
+			pgOrder = removeDeletePages(deletePages, pgOrder);
 
 		String pgOrderString = "";
 		for (int i = 0; i < pgOrder.length; i++) {

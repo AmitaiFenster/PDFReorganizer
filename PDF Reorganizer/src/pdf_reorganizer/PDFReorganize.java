@@ -6,14 +6,35 @@ import java.io.FileOutputStream;
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.PdfStamper;
 
-public class Reorganize extends Action {
+/**
+ * Reorganizing two PDF files to one PDF file. After scanning all the odd pages
+ * and then scanning all the even pages, use this class to combine and
+ * reorganize the two PDF files that were created (odd and even) into one PDF
+ * file.
+ * 
+ * @author Amitai Fensterheim TOAO
+ *
+ */
+public class PDFReorganize extends PDFAction {
 
 	PdfReader reader;
 	PdfStamper stamper;
 
-	public Reorganize(String firstFileSource, String secondFileSource,
-			String fileDestination) {
-		super(firstFileSource, secondFileSource, fileDestination);
+	/**
+	 * Creating a new PDFReorganize instance. thins object is used for
+	 * Reorganizing two PDF files to one PDF file. After scanning all the odd
+	 * pages and then scanning all the even pages, use this class to combine and
+	 * reorganize the two PDF files that were created (odd and even) into one
+	 * PDF file.
+	 * 
+	 * @param firstFileLocation
+	 * @param secondFileLocation
+	 * @param fileDestination
+	 * @throws Exception
+	 */
+	public PDFReorganize(String firstFileLocation, String secondFileLocation,
+			String fileDestination) throws Exception {
+		super(firstFileLocation, secondFileLocation, fileDestination);
 	}
 
 	@Override
@@ -21,6 +42,10 @@ public class Reorganize extends Action {
 		reorganize(deletePages);
 	}
 
+	/**
+	 * ordering in a String the order of the pages with pages to delete and in
+	 * the right order for reorganizing the two PDF files (odd, even, odd...).
+	 */
 	@Override
 	public String orderString(int pgAmount, String deletePages)
 			throws Exception {
@@ -38,7 +63,7 @@ public class Reorganize extends Action {
 			pgOrder[j] = i++;
 
 		if (!deletePages.equals(""))
-			pgOrder = deletePages(deletePages, pgOrder);
+			pgOrder = removeDeletePages(deletePages, pgOrder);
 
 		String pgOrderString = "";
 		for (int k = 0; k < pgOrder.length; k++) {
@@ -52,8 +77,8 @@ public class Reorganize extends Action {
 	}
 
 	/**
-	 * reorganizes the PDF files firstFileSource and secondFileSource, and saves
-	 * the final file to fileDestination
+	 * reorganizes the PDF files firstFileLocation and secondFileLocation, and
+	 * saves the final file to fileDestination
 	 * 
 	 * @param deletePages
 	 *            String of pages to delete (example: "1, 2, 3"). leave blank if
@@ -62,10 +87,14 @@ public class Reorganize extends Action {
 	 *             Exception number: 001, 002, 003, 004
 	 */
 	public void reorganize(String deletePages) throws Exception {
+
+		String[] filesLocations = new String[] { this.firstFileLocation,
+				this.secondFileLocation };
+
 		try {
 			// Combining the two PDF files into one temporary file.
 			combine(System.getProperty("user.home") + "\\" + "Desktop" + "\\"
-					+ "combinedTemp.pdf");
+					+ "combinedTemp.pdf", filesLocations);
 			this.reader = new PdfReader(System.getProperty("user.home") + "\\"
 					+ "Desktop" + "\\" + "combinedTemp.pdf");
 			this.reader.selectPages(orderString(this.reader.getNumberOfPages(),

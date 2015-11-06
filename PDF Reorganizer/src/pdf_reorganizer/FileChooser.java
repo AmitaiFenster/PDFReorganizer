@@ -7,9 +7,10 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 /**
+ * FileChooser uses JFileChoose to choose the directory of the files to open or
+ * save. Second option that wasn't used is FileDialog.
  * 
- * @author amita_000 FileChooser uses JFileChoose to choose the directory of the
- *         files to open or save. Second option that wasn't used is FileDialog.
+ * @author Amitai Fensterheim TOAO
  */
 public class FileChooser {
 
